@@ -8,20 +8,25 @@ import App from "./App.jsx";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { AuthProvider } from "./Context/AuthContext";
 import { ThemeProvider } from "next-themes";
+import { CompanyProvider } from "./Context/CompanyProvider";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
-    <ThemeProvider attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange>
-      <AuthProvider>
-        <TooltipProvider>
-          <App />
-        </TooltipProvider>
-      </AuthProvider>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+      >
+        <AuthProvider>
+          <CompanyProvider>
+            <TooltipProvider>
+              <App />
+            </TooltipProvider>
+          </CompanyProvider>
+        </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>
-  </StrictMode>
+  </StrictMode>,
 );

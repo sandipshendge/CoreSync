@@ -32,10 +32,9 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gray-300 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
-        <div className="rounded-2xl bg-white p-8 shadow-xl border border-gray-200">
-          {/* Header */}
+        <div className="rounded-2xl bg-gray-200 p-8 shadow-xl border border-gray-200">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900">Welcome Back</h1>
 
@@ -43,17 +42,12 @@ const Login = () => {
               Please sign in to your CoreSync account
             </p>
           </div>
-
-          {/* Error */}
           {error && (
             <div className="mt-6 rounded-lg bg-red-50 p-3 text-sm text-red-600 border border-red-200">
               {error}
             </div>
           )}
-
-          {/* Login Form */}
           <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
-            {/* Username */}
             <div>
               <label
                 htmlFor="username"
@@ -74,8 +68,6 @@ const Login = () => {
                 className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all text-sm"
               />
             </div>
-
-            {/* Password */}
             <div>
               <label
                 htmlFor="password"
@@ -96,8 +88,6 @@ const Login = () => {
                 className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all text-sm"
               />
             </div>
-
-            {/* Login Button */}
             <button
               type="submit"
               disabled={loading}
