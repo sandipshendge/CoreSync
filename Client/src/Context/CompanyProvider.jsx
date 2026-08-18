@@ -1,105 +1,186 @@
 import React, { createContext, useContext, useState } from "react";
 import axios from "axios";
-
 const CompanyContext = createContext(null);
-
 const API_URL = `${import.meta.env.VITE_API_URL}/Company`;
-
 export const CompanyProvider = ({ children }) => {
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [token, setToken] = useState(localStorage.getItem("token") || null);
+  const getCompanies = async () => {
+    setLoading(true);
+    setError("");
 
-  const addCompany = async (formData) => {
     try {
-      setLoading(true);
-      setError("");
-      if (!token) {
-        return {
-          success: false,
-          error: "Authentication token not found. Please login again.",
-        };
-      }
-
-      const payload = {
-        nm: formData.companyName,
-        pf: Number(formData.pf),
-        mlwf: Number(formData.mlwf),
-        address: formData.address,
-        gstin: formData.gstin,
-        state: formData.state,
-        serviceCharge: Number(formData.serviceCharge),
-        employeeStartCode: Number(formData.employeeStartCode),
-        isActive: true,
-      };
-
-      console.log("Company Payload:", payload);
-
-      const response = await axios.post(API_URL, payload, {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(API_URL, {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
         },
       });
-
-      console.log("Company saved:", response.data);
-
-      setCompanies((prev) => [...prev, response.data]);
-
+      console.log("GET RESPONSE:", response.data);
+      const data = Array.isArray(response.data)
+        ? response.data
+        : response.data?.data || response.data?.records || [];
+      setCompanies(data);
       return {
         success: true,
-        data: response.data,
+        data: data,
       };
-    } catch (error) {
-      console.error("Company API Error:", error);
-
-      if (error.response?.status === 401) {
-        return {
-          success: false,
-          error: "Unauthorized. Please login again.",
-        };
+    } catch (err) {
+      console.error("Company GET Error:", err);
+      console.error("Backend:", err.response?.data);
+      if (err.response?.status === 401) {
+        setError("Unauthorized. Please login again.");
+      } else {
+        setError(
+          err.response?.data?.message ||
+            err.response?.data?.error ||
+            err.message ||
+            "Failed to load companies",
+        );
       }
-
-      const message = error.response?.data?.message || "Failed to save company";
-
-      setError(message);
 
       return {
         success: false,
-        error: message,
+        error:
+          err.response?.data?.message ||
+          err.response?.data?.error ||
+          err.message ||
+          "Failed to load companies",
       };
     } finally {
       setLoading(false);
     }
   };
-  const getCompanies = async () => {
+
+  const addCompany = async (companyData) => {
+    setLoading(true);
+    setError("");
+
     try {
-      setLoading(true);
-      setError("");
-      const response = await axios.get(API_URL, {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(API_URL, companyData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
 
-      setCompanies(response.data);
+      console.log("ADD RESPONSE:", response.data);
+      await getCompanies();
 
       return {
         success: true,
         data: response.data,
       };
     } catch (err) {
-      console.error("Get Companies Error:", err);
-
-      const message = err.response?.data?.message || "Failed to get companies";
-
-      setError(message);
+      console.error("Company ADD Error:", err);
+      console.error("Backend:", err.response?.data);
+      if (err.response?.status === 401) {
+        setError("Unauthorized. Please login again.");
+      } else {
+        setError(
+          err.response?.data?.message ||
+            err.response?.data?.error ||
+            err.message ||
+            "Failed to add company",
+        );
+      }
 
       return {
         success: false,
-        error: message,
+        error:
+          err.response?.data?.message ||
+          err.response?.data?.error ||
+          err.message ||
+          "Failed to add company",
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+  const updateCompany = async (id, companyData) => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.post(`${API_URL}/${id}`, companyData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          
+        },
+      });
+      await getCompanies();
+
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (err) {
+      console.error("Error:", err);
+      console.error("Status:", err.response?.status);
+      console.error("Backend Response:", err.response?.data);
+      if (err.response?.status === 401) {
+        setError("Unauthorized. Please login again.");
+
+        return {
+          success: false,
+          error: "Unauthorized. Please login again.",
+        };
+      }
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        "Failed to update company";
+
+      setError(errorMessage);
+
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateCompanyStatus = async (id) => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const token = localStorage.getItem("token");
+      console.log("Company ID:", id);
+      const response = await axios.get(`${API_URL}/activeDeactive/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log("STATUS RESPONSE:", response.data);
+      await getCompanies();
+
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (err) {
+      console.error("Status update error:", err);
+      console.error("Backend:", err.response?.data);
+
+      const errorMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        "Failed to update status";
+
+      setError(errorMessage);
+
+      return {
+        success: false,
+        error: errorMessage,
       };
     } finally {
       setLoading(false);
@@ -112,8 +193,10 @@ export const CompanyProvider = ({ children }) => {
         companies,
         loading,
         error,
-        addCompany,
         getCompanies,
+        addCompany,
+        updateCompany,
+        updateCompanyStatus,
       }}
     >
       {children}
@@ -123,12 +206,8 @@ export const CompanyProvider = ({ children }) => {
 
 export const useCompany = () => {
   const context = useContext(CompanyContext);
-
-  if (context === null) {
+  if (!context) {
     throw new Error("useCompany must be used inside CompanyProvider");
   }
-
   return context;
 };
-
-export default CompanyProvider;

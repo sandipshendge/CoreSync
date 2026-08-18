@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 import {
   Building2,
   Pencil,
@@ -19,71 +18,80 @@ import { useCompany } from "@/Context/CompanyProvider";
 
 const CompanyDetails = () => {
   const navigate = useNavigate();
-  const { getCompanies, companies } = useCompany();
+  const { getCompanies, companies, updateCompanyStatus } = useCompany();
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-
   const pageSize = 10;
 
   useEffect(() => {
-    console.log("function called")
     loadCompanies();
   }, []);
 
   const loadCompanies = async () => {
-    await getCompanies();
+    try {
+      await getCompanies();
+    } catch (error) {
+      console.error("Failed to load companies:", error);
+    }
   };
-
   const filteredCompanies = useMemo(() => {
     const value = search.toLowerCase().trim();
 
     if (!value) {
       return companies;
     }
-
     return companies.filter((company) =>
-      company.companyName?.toLowerCase().includes(value),
+      (company.nm || company.companyName || "").toLowerCase().includes(value),
     );
   }, [search, companies]);
-
-  
   const totalRecords = filteredCompanies.length;
   const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = Math.min(startIndex + pageSize, totalRecords);
   const currentCompanies = filteredCompanies.slice(startIndex, endIndex);
-
- 
   const handleSearch = (e) => {
     setSearch(e.target.value);
 
     setCurrentPage(1);
   };
-
   const handleEdit = (company) => {
-    console.log("Edit Company:", company);
-
-    navigate("/master/company/add");
+    if (!company) {
+      console.error("NO COMPANY RECEIVED");
+      return;
+    }
+    navigate("/master/company/add", {
+      state: {
+        company: company,
+        isEdit: true,
+      },
+    });
   };
+  const handleStatusChange = async (id) => {
+    console.log("Updating status for:", id);
 
+    try {
+      await updateCompanyStatus(id);
+      await getCompanies();
+    } catch (error) {
+      console.error("Status update error:", error);
+    }
+  };
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-background">
       <div className="container mx-auto px-4 py-6">
-      
         <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <Building2 className="h-5 w-5" />
             </div>
-
             <div>
               <h1 className="text-xl font-semibold">Company Details</h1>
-
               <p className="text-sm text-muted-foreground">
                 Manage your company profiles and payroll settings
               </p>
             </div>
           </div>
+
           <Button
             onClick={() => navigate("/master/company/add")}
             className="gap-2"
@@ -95,7 +103,6 @@ const CompanyDetails = () => {
         <div className="mb-4 flex flex-col gap-3 rounded-lg border bg-card p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
           <div className="relative w-full sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-
             <Input
               value={search}
               onChange={handleSearch}
@@ -117,31 +124,24 @@ const CompanyDetails = () => {
                   <th className="w-[65px] px-4 py-3 text-left text-xs font-semibold">
                     #
                   </th>
-
                   <th className="px-4 py-3 text-left text-xs font-semibold">
                     IS ACTIVE
                   </th>
-
                   <th className="px-4 py-3 text-left text-xs font-semibold">
                     COMPANY NAME
                   </th>
-
                   <th className="px-4 py-3 text-left text-xs font-semibold">
                     PF
                   </th>
-
                   <th className="px-4 py-3 text-left text-xs font-semibold">
                     MLWF
                   </th>
-
                   <th className="px-4 py-3 text-left text-xs font-semibold">
                     SERVICE CHARGE
                   </th>
-
                   <th className="px-4 py-3 text-left text-xs font-semibold">
                     EMPLOYEE START CODE
                   </th>
-
                   <th className="px-4 py-3 text-left text-xs font-semibold">
                     STATE
                   </th>
@@ -166,31 +166,39 @@ const CompanyDetails = () => {
                         </Button>
                       </td>
                       <td className="px-4 py-3">
-                        {company.isActive ? (
-                          <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-1 text-[11px] font-semibold text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                            YES
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-1 text-[11px] font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                            NO
-                          </span>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleStatusChange(company.id)}
+                          className="focus:outline-none"
+                        >
+                          {company.isActive ? (
+                            <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-1 text-[11px] font-semibold text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400">
+                              YES
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400">
+                              NO
+                            </span>
+                          )}
+                        </button>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="font-medium">
-                          {company.nm}
+                        <span className="text-sm">
+                          {company.nm || company.companyName || "-"}
                         </span>
                       </td>
-                     <td className="px-4 py-3 text-sm">{company.pf}</td>
-                      <td className="px-4 py-3 text-sm">{company.mlwf}</td>
+                      <td className="px-4 py-3 text-sm">{company.pf ?? "-"}</td>
                       <td className="px-4 py-3 text-sm">
-                        {company.serviceCharge}
+                        {company.mlwf ?? "-"}
                       </td>
                       <td className="px-4 py-3 text-sm">
-                        {company.employeeStartCode}
+                        {company.serviceCharge ?? "-"}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        {company.employeeStartCode ?? "-"}
                       </td>
                       <td className="px-4 py-3 text-sm font-medium">
-                        {company.state}
+                        {company.state ?? "-"}
                       </td>
                     </tr>
                   ))
@@ -248,7 +256,6 @@ const CompanyDetails = () => {
               >
                 <ChevronsLeft className="h-4 w-4" />
               </Button>
-
               <Button
                 variant="ghost"
                 size="icon"
@@ -258,7 +265,6 @@ const CompanyDetails = () => {
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-
               <div className="flex h-8 items-center rounded-md border bg-background px-3 text-sm">
                 Page
                 <span className="mx-1 font-medium">{currentPage}</span>
@@ -277,6 +283,8 @@ const CompanyDetails = () => {
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
+
+              {/* LAST */}
 
               <Button
                 variant="ghost"

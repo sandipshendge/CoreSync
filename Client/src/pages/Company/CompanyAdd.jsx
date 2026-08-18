@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Building2,
   MapPin,
@@ -11,7 +11,6 @@ import {
   Save,
   Loader2,
 } from "lucide-react";
-
 import {
   Card,
   CardContent,
@@ -28,9 +27,10 @@ import { useCompany } from "@/Context/CompanyProvider";
 
 const CompanyAdd = () => {
   const navigate = useNavigate();
-
-  const { addCompany, loading } = useCompany();
-
+  const location = useLocation();
+  const { addCompany, updateCompany, loading } = useCompany();
+  const editCompany = location.state?.company;
+  const isEdit = location.state?.isEdit === true;
   const [formData, setFormData] = useState({
     companyName: "",
     employeeStartCode: "",
@@ -43,6 +43,21 @@ const CompanyAdd = () => {
   });
 
   const [errors, setErrors] = useState({});
+  useEffect(() => {
+    if (isEdit && editCompany) {
+      setFormData({
+        companyName: editCompany.nm ?? editCompany.companyName ?? "",
+        employeeStartCode: editCompany.employeeStartCode ?? "",
+        address: editCompany.address ?? "",
+        gstin: editCompany.gstin ?? "",
+        state: editCompany.state ?? "MAHARASHTRA",
+        serviceCharge: editCompany.serviceCharge ?? "",
+        pf: editCompany.pf ?? "",
+        mlwf: editCompany.mlwf ?? "",
+      });
+    }
+  }, [isEdit, editCompany]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -50,7 +65,6 @@ const CompanyAdd = () => {
       ...prev,
       [name]: value,
     }));
-
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
@@ -60,66 +74,125 @@ const CompanyAdd = () => {
   };
   const validateForm = () => {
     const newErrors = {};
-
-    if (!formData.companyName.trim()) {
+    if (!String(formData.companyName ?? "").trim()) {
       newErrors.companyName = "Company Name is required.";
     }
-
-    if (!formData.employeeStartCode.trim()) {
-      newErrors.employeeStartCode =
-        "Employee Start Code is required.";
+    if (!String(formData.employeeStartCode ?? "").trim()) {
+      newErrors.employeeStartCode = "Employee Start Code is required.";
     }
-
-    if (!formData.address.trim()) {
+    if (!String(formData.address ?? "").trim()) {
       newErrors.address = "Address is required.";
     }
-
-    if (!formData.gstin.trim()) {
+    if (!String(formData.gstin ?? "").trim()) {
       newErrors.gstin = "GSTIN is required.";
     }
-
-    if (!formData.state.trim()) {
+    if (!String(formData.state ?? "").trim()) {
       newErrors.state = "State is required.";
     }
-
-    if (!formData.serviceCharge.trim()) {
-      newErrors.serviceCharge =
-        "Service Charge is required.";
+    if (
+      formData.serviceCharge === "" ||
+      formData.serviceCharge === null ||
+      formData.serviceCharge === undefined
+    ) {
+      newErrors.serviceCharge = "Service Charge is required.";
     }
-
-    if (!formData.pf.trim()) {
+    if (
+      formData.pf === "" ||
+      formData.pf === null ||
+      formData.pf === undefined
+    ) {
       newErrors.pf = "PF is required.";
     }
-
-    if (!formData.mlwf.trim()) {
+    if (
+      formData.mlwf === "" ||
+      formData.mlwf === null ||
+      formData.mlwf === undefined
+    ) {
       newErrors.mlwf = "MLWF is required.";
     }
-
     setErrors(newErrors);
-
     return Object.keys(newErrors).length === 0;
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validateForm()) {
+      console.log("Validation failed");
       return;
     }
+    try {
+      if (isEdit && editCompany) {
+        const payload = {
+          nm: formData.companyName,
+          employeeStartCode: Number(formData.employeeStartCode),
+          address: formData.address,
+          gstin: formData.gstin,
+          state: formData.state,
+          serviceCharge: Number(formData.serviceCharge),
+          pf: Number(formData.pf),
+          mlwf: Number(formData.mlwf),
+        };
 
-    const result = await addCompany(formData);
+        console.log("UPDATE PAYLOAD:", payload);
+        const result = await updateCompany(editCompany.id, payload);
 
-    if (result.success) {
-      alert("Company added successfully!");
-      navigate("/master/company/details");
-    } else {
-      alert(result.error);
+        console.log("UPDATE RESULT:", result);
+        if (result?.success) {
+          alert("Company updated successfully!");
+
+          navigate("/master/company/details", {
+            replace: true,
+          });
+        } else {
+          alert(result?.error || "Failed to update company.");
+        }
+        return;
+      }
+      const addPayload = {
+        nm: formData.companyName,
+        employeeStartCode: Number(formData.employeeStartCode),
+        address: formData.address,
+        gstin: formData.gstin,
+        state: formData.state,
+        serviceCharge: Number(formData.serviceCharge),
+        pf: Number(formData.pf),
+        mlwf: Number(formData.mlwf),
+        isActive: true,
+      };
+      console.log("ADD PAYLOAD:", addPayload);
+      const result = await addCompany(addPayload);
+      console.log("ADD RESULT:", result);
+      if (result?.success) {
+        alert("Company added successfully!");
+
+        navigate("/master/company/details", {
+          replace: true,
+        });
+      } else {
+        alert(result?.error || "Failed to add company.");
+      }
+    } catch (error) {
+      console.error("Company submit error:", error);
+      if (error.response?.status === 401) {
+        alert("Session expired. Please login again.");
+
+        return;
+      }
+
+      alert(
+        error.response?.data?.message ||
+          error.response?.data?.error ||
+          error.message ||
+          "Something went wrong.",
+      );
     }
   };
-
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-background">
       <div className="container mx-auto max-w-6xl px-4 py-6">
         <Card className="shadow-sm">
+          {/* HEADER */}
+
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -128,16 +201,17 @@ const CompanyAdd = () => {
 
               <div>
                 <CardTitle className="text-xl">
-                  Add Company
+                  {isEdit ? "Edit Company" : "Add Company"}
                 </CardTitle>
 
                 <CardDescription>
-                  Enter company and payroll details.
+                  {isEdit
+                    ? "Update company and payroll details."
+                    : "Enter company and payroll details."}
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
-
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -167,9 +241,7 @@ const CompanyAdd = () => {
               <div className="space-y-2">
                 <Label htmlFor="address">
                   Address
-                  <span className="ml-1 text-destructive">
-                    *
-                  </span>
+                  <span className="ml-1 text-destructive">*</span>
                 </Label>
 
                 <div className="relative">
@@ -183,17 +255,13 @@ const CompanyAdd = () => {
                     placeholder="Enter complete company address"
                     rows={3}
                     className={`flex w-full rounded-md border bg-background px-3 py-2 pl-10 text-sm shadow-sm outline-none placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring ${
-                      errors.address
-                        ? "border-destructive"
-                        : ""
+                      errors.address ? "border-destructive" : ""
                     }`}
                   />
                 </div>
 
                 {errors.address && (
-                  <p className="text-sm text-destructive">
-                    {errors.address}
-                  </p>
+                  <p className="text-sm text-destructive">{errors.address}</p>
                 )}
               </div>
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -224,9 +292,7 @@ const CompanyAdd = () => {
                   <HandCoins className="h-5 w-5 text-primary" />
 
                   <div>
-                    <h3 className="font-semibold">
-                      Payroll Details
-                    </h3>
+                    <h3 className="font-semibold">Payroll Details</h3>
 
                     <p className="text-xs text-muted-foreground">
                       Enter payroll charges and contributions.
@@ -273,15 +339,12 @@ const CompanyAdd = () => {
                 </div>
               </div>
             </CardContent>
-
             <CardFooter className="flex justify-end gap-3 border-t bg-muted/10">
               <Button
                 type="button"
                 variant="ghost"
                 disabled={loading}
-                onClick={() =>
-                  navigate("/master/company/details")
-                }
+                onClick={() => navigate("/master/company/details")}
               >
                 Cancel
               </Button>
@@ -290,12 +353,12 @@ const CompanyAdd = () => {
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
+                    {isEdit ? "Updating..." : "Saving..."}
                   </>
                 ) : (
                   <>
                     <Save className="mr-2 h-4 w-4" />
-                    Save Company
+                    {isEdit ? "Update Company" : "Save Company"}
                   </>
                 )}
               </Button>
@@ -306,7 +369,6 @@ const CompanyAdd = () => {
     </div>
   );
 };
-
 
 const FormField = ({
   label,
@@ -324,9 +386,7 @@ const FormField = ({
       <Label htmlFor={name}>
         {label}
 
-        {required && (
-          <span className="ml-1 text-destructive">*</span>
-        )}
+        {required && <span className="ml-1 text-destructive">*</span>}
       </Label>
 
       <div className="relative">
@@ -346,18 +406,12 @@ const FormField = ({
           onChange={onChange}
           placeholder={placeholder}
           className={`h-11 pl-10 ${
-            error
-              ? "border-destructive focus-visible:ring-destructive"
-              : ""
+            error ? "border-destructive focus-visible:ring-destructive" : ""
           }`}
         />
       </div>
 
-      {error && (
-        <p className="text-sm text-destructive">
-          {error}
-        </p>
-      )}
+      {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
   );
 };
