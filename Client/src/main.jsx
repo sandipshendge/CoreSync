@@ -9,6 +9,7 @@ import { TooltipProvider } from "./components/ui/tooltip";
 import { AuthProvider } from "./Context/AuthContext";
 import { ThemeProvider } from "next-themes";
 import { CompanyProvider } from "./Context/CompanyProvider";
+import { CustomerProvider } from "./Context/CustomerProvider";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -21,9 +22,11 @@ createRoot(document.getElementById("root")).render(
       >
         <AuthProvider>
           <CompanyProvider>
-            <TooltipProvider>
-              <App />
-            </TooltipProvider>
+            <CustomerProvider>
+              <TooltipProvider>
+                <App />
+              </TooltipProvider>
+            </CustomerProvider>
           </CompanyProvider>
         </AuthProvider>
       </ThemeProvider>

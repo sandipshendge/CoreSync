@@ -9,7 +9,7 @@ import Rawmaterial from "@/pages/Rawmaterial";
 
 import ProtectedRoute from "./ProtectedRoute";
 import PublicRoute from "./PublicRoute";
-import Customer from "@/pages/Customer/Customer";
+//import Customer from "@/pages/Customer/Customer";
 import Attendance from "@/pages/transcation/Attendance";
 import EmployeeInvoice from "@/pages/transcation/EmployeeInvoice";
 import Tendor from "@/pages/transcation/Tendor";
@@ -18,6 +18,9 @@ import AttendanceReport from "@/pages/report/AttendanceReport";
 import CompanyDetails from "@/pages/Company/CompanyDetails";
 import CompanyAdd from "@/pages/Company/CompanyAdd";
 import CompanyLayout from "@/pages/Company/CompanyLayout";
+import CustomerLayout from "@/pages/Customer/CustomerLayout";
+import CustomerDetails from "@/pages/Customer/CustomerDetails";
+import CustomerAdd from "@/pages/Customer/CustomerAdd";
 
 
 
@@ -40,7 +43,14 @@ const AppRoutes = () => {
             <Route path="details" element={<CompanyDetails />} />
             <Route path="add" element={<CompanyAdd />} />
           </Route>
-          <Route path="Customer" element={<Customer />} />
+           <Route path="customer" element={<CustomerLayout />}>
+           <Route 
+              index 
+              element={<Navigate to="/master/customer/details" replace />}/>
+           <Route path="details" element={<CustomerDetails />} />
+           <Route path="add" element={<CustomerAdd />} />
+           </Route>
+          {/* <Route path="Customer" element={<Customer />} /> */}
           <Route path="raw_material" element={<Rawmaterial />} />
         </Route>
         <Route path="/transaction">
